@@ -35,6 +35,124 @@ namespace twozerofoureight
             HandleChanges();
         }
 
+        public int GetScore()
+        {
+            int sum = 0;
+            for (int i = 0; i < boardSize; i++)
+            {
+                for (int j = 0; j < boardSize; j++)
+                {
+                    sum = sum + board[i, j];
+                }
+            }
+            return sum;
+        }
+
+        public bool CheckGameOver()
+        {
+            bool gg = false;
+            for (int i = 0; i < boardSize; i++)
+            {
+                for (int j = 0; j < boardSize; j++)
+                {
+                    if (board[i, j] == 2048)
+                    {
+                        gg = true;
+                    }
+                }
+            }
+            return gg;
+        }
+
+        public bool FullTable()
+        {
+            int count = 0;
+            for (int i = 0; i < boardSize; i++)
+            {
+                for (int j = 0; j < boardSize; j++)
+                {
+                    if (board[i, j] > 0)
+                    {
+                        count++;
+                    }
+                }
+            }
+            if (count == 16)
+            {
+                for (int i = 0; i < boardSize; i++)
+                {
+                    for (int j = 0; j < boardSize; j++)
+                    {
+                        if (i == 0 && j == 0) // มุมซ้ายบน
+                        {
+                            if (board[i, j] == board[i + 1, j] || board[i, j] == board[i, j + 1])
+                            {
+                                return false;
+                            }
+                        }
+                        else if (i == 0 && j == boardSize - 1) //มุมขวาบน
+                        {
+                            if (board[i, j] == board[i, j - 1] || board[i, j] == board[i + 1, j])
+                            {
+                                return false;
+                            }
+                        }
+                        else if (i == boardSize - 1 && j == 0) // มุมขวาล่าง
+                        {
+                            if (board[i, j] == board[i - 1, j] || board[i, j] == board[i, j + 1])
+                            {
+                                return false;
+                            }
+                        }
+                        else if (i == boardSize - 1 && j == boardSize - 1) // มุมซ้ายล่าง
+                        {
+                            if (board[i, j] == board[i - 1, j] || board[i, j] == board[i, j - 1])
+                            {
+                                return false;
+                            }
+                        }
+                        else if (i == 0 && j != 0 && j != boardSize - 1) // บน
+                        {
+                            if (board[i, j] == board[i, j - 1] || board[i, j] == board[i, j + 1] || board[i, j] == board[i + 1, j])
+                            {
+                                return false;
+                            }
+                        }
+                        else if (j == 0 && i != 0 && i != boardSize - 1) // ซ้าย
+                        {
+                            if (board[i, j] == board[i + 1, j] || board[i, j] == board[i - 1, j] || board[i, j] == board[i, j + 1])
+                            {
+                                return false;
+                            }
+                        }
+                        else if (j == boardSize - 1 && i != 0 && i != boardSize - 1) // ขวา
+                        {
+                            if (board[i, j] == board[i - 1, j] || board[i, j] == board[i + 1, j] || board[i, j] == board[i, j - 1])
+                            {
+                                return false;
+                            }
+                        }
+                        else if (i == boardSize - 1 && j != boardSize - 1 && j != 0) // ล่าง
+                        {
+                            if (board[i, j] == board[i, j + 1] || board[i, j] == board[i, j - 1] || board[i, j] == board[i - 1, j])
+                            {
+                                return false;
+                            }
+                        }
+                        else // กลาง
+                        {
+                            if (board[i, j] == board[i - 1, j] || board[i, j] == board[i + 1, j] || board[i, j] == board[i, j - 1] || board[i, j] == board[i, j + 1])
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
         public int[,] GetBoard()
         {
             return board;
@@ -103,94 +221,106 @@ namespace twozerofoureight
 
         public void PerformDown()
         {
-            bool changed = false; // whether the board has changed
-            foreach (int i in range)
+            if (CheckGameOver() == false)
             {
-                int[] buffer = new int[boardSize];
-                // extract the current column from bottom to top
-                foreach (int j in range)
+                bool changed = false; // whether the board has changed
+                foreach (int i in range)
                 {
-                    buffer[boardSize - j - 1] = board[j, i];
+                    int[] buffer = new int[boardSize];
+                    // extract the current column from bottom to top
+                    foreach (int j in range)
+                    {
+                        buffer[boardSize - j - 1] = board[j, i];
+                    }
+                    // process the extracted array
+                    // also track changes
+                    changed = ShiftAndMerge(buffer) || changed;
+                    // copy back
+                    foreach (int j in range)
+                    {
+                        board[j, i] = buffer[boardSize - j - 1];
+                    }
                 }
-                // process the extracted array
-                // also track changes
-                changed = ShiftAndMerge(buffer) || changed;
-                // copy back
-                foreach (int j in range)
-                {
-                    board[j, i] = buffer[boardSize - j - 1];
-                }
+                HandleChanges(changed);
             }
-            HandleChanges(changed);
         }
 
         public void PerformUp()
         {
-            bool changed = false; // whether the board has changed
-            foreach (int i in range)
+            if (CheckGameOver() == false)
             {
-                int[] buffer = new int[boardSize];
-                // extract the current column from top to bottom
-                foreach (int j in range)
+                bool changed = false; // whether the board has changed
+                foreach (int i in range)
                 {
-                    buffer[j] = board[j, i];
+                    int[] buffer = new int[boardSize];
+                    // extract the current column from top to bottom
+                    foreach (int j in range)
+                    {
+                        buffer[j] = board[j, i];
+                    }
+                    // process the extracted array
+                    // also track changes
+                    changed = ShiftAndMerge(buffer) || changed;
+                    // copy back
+                    foreach (int j in range)
+                    {
+                        board[j, i] = buffer[j];
+                    }
                 }
-                // process the extracted array
-                // also track changes
-                changed = ShiftAndMerge(buffer) || changed;
-                // copy back
-                foreach (int j in range)
-                {
-                    board[j, i] = buffer[j];
-                }
+                HandleChanges(changed);
             }
-            HandleChanges(changed);
         }
 
         public void PerformRight()
         {
-            bool changed = false; // whether the board has changed
-            foreach (int i in range)
+            if (CheckGameOver() == false)
             {
-                int[] buffer = new int[boardSize];
-                // extract the current column from right to left
-                foreach (int j in range)
+                bool changed = false; // whether the board has changed
+                foreach (int i in range)
                 {
-                    buffer[boardSize - j - 1] = board[i, j];
+                    int[] buffer = new int[boardSize];
+                    // extract the current column from right to left
+                    foreach (int j in range)
+                    {
+                        buffer[boardSize - j - 1] = board[i, j];
+                    }
+                    // process the extracted array
+                    // also track changes
+                    changed = ShiftAndMerge(buffer) || changed;
+                    // copy back
+                    foreach (int j in range)
+                    {
+                        board[i, j] = buffer[boardSize - j - 1];
+                    }
                 }
-                // process the extracted array
-                // also track changes
-                changed = ShiftAndMerge(buffer) || changed;
-                // copy back
-                foreach (int j in range)
-                {
-                    board[i, j] = buffer[boardSize - j - 1];
-                }
+                HandleChanges(changed);
             }
-            HandleChanges(changed);
         }
 
         public void PerformLeft()
         {
-            bool changed = false; // whether the board has changed
-            foreach (int i in range)
+            if (CheckGameOver() == false)
             {
-                int[] buffer = new int[boardSize];
-                // extract the current column from left to right
-                foreach (int j in range)
+                bool changed = false; // whether the board has changed
+                foreach (int i in range)
                 {
-                    buffer[j] = board[i, j];
+                    int[] buffer = new int[boardSize];
+                    // extract the current column from left to right
+                    foreach (int j in range)
+                    {
+                        buffer[j] = board[i, j];
+                    }
+                    // process the extracted array
+                    // also track changes
+                    changed = ShiftAndMerge(buffer) || changed;
+                    // copy back
+                    foreach (int j in range)
+                    {
+                        board[i, j] = buffer[j];
+                    }
                 }
-                // process the extracted array
-                // also track changes
-                changed = ShiftAndMerge(buffer) || changed;
-                // copy back
-                foreach (int j in range)
-                {
-                    board[i, j] = buffer[j];
-                }
+                HandleChanges(changed);
             }
-            HandleChanges(changed);
         }
     }
 }
